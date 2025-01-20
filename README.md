@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>回傳程式登記</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #f0f0f0 0%, #A0929D 100%);
+            background-size: 100% 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 4em;
+            color: #333;
+        }
+
+        p {
+            margin: 15px 0;
+            font-size: 2em;
+            color: #666;
+        }
+
+        input, select {
+            width: 100%;
+            height: 60px;
+            padding: 12px;
+            font-size: 0.9em;
+            box-sizing: border-box;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 2em;
+            cursor: pointer;
+            border: none;
+        }
+
+        #submitBtn, #getDataBtn, #getHistoricalDataBtn {
+            background-color: #4D4249;
+            color: white;
+        }
+
+        #submitBtn:hover, #getDataBtn:hover, #getHistoricalDataBtn:hover {
+            background-color: #211C1F;
+        }
+
+        #dataDisplay {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 2em;
+            background-color: #f9f9f9;
+            color: #333;
+            border-radius: 8px;
+        }
+        
+        /* 新增篩選條樣式 */
+        #filterContainer {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #filterInput {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.2em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* 模態對話框樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            max-width: 2000px; /* 最大寬度 */
+            width: 80%; /* 寬度為80%，您可以調整這個百分比或設為固定值 */
+            height: 90vh; /* 設定高度為視窗的80% */
+            max-height: 100vh; /* 最大高度為80% */
+            overflow-y: auto; /* 當內容超出時顯示滾動條 */
+            border-radius: 8px;
+                        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        /* 手機響應式設計 */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            p {
+                font-size: 0.8em;
+            }
+
+            input, select {
+                height: 50px;
+                font-size: 0.8em;
+            }
+
+            button {
+                padding: 10px;
+                font-size: 1.8em;
+            }
+
+            #dataDisplay {
+                font-size: 1.6em;
+                padding: 10px;
+            }
+
+            .modal-content {
+                max-width: 95%;
+            }
+        }
+
+        #dataDisplay {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 600px; /* 增大最大高度來顯示更多數據 */
+            overflow-y: auto; /* 顯示滾動條，當內容超過最大高度時 */
+            font-size: 2em;
+            background-color: #f9f9f9;
+            color: #333;
+            border-radius: 8px;
+        }
+
+        /* 表格樣式 */
+        #dataDisplay table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        /* 表格單元格樣式 */
+        #dataDisplay td {
+            padding: 10px;
+            text-align: center;
+            word-wrap: break-word;
+        }   
+    </style>
+    <script>
+        // 保存表單資料
+        function saveData() {
+            var confirmSubmission = confirm("你確定要提交這些資料嗎？");
+
+            if (confirmSubmission) {
+                var machine = document.getElementById('machine').value;
+                var fileNo = document.getElementById('fileNo').value;
+                var machineType = document.getElementById('machineType').value;
+                var productName = document.getElementById('productName').value;
+                var partNumber = document.getElementById('partnumber').value;
+                var drawingnumber = document.getElementById('drawingnumber').value;
+                var staff = document.getElementById('staff').value;
+                var returnDate = document.getElementById('returnDate').value;
+
+                var formData = {
+                    machine: machine,
+                    fileNo: fileNo,
+                    machineType: machineType,
+                    productName: productName,
+                    partNumber: partNumber,
+                    drawingnumber: drawingnumber,
+                    staff: staff,
+                    returnDate: returnDate
+                };
+
+                google.script.run.withSuccessHandler(function(message) {
+                    alert(message);
+                }).saveData(formData);
+            } else {
+                alert("提交已取消");
+            }
+        }
+
+        // 取得資料
+        function getData() {
+            google.script.run.withSuccessHandler(function(data) {
+                displayData(data);
+            }).fetchData();
+        }
+
+        function displayData(data) {
+            var displayDiv = document.getElementById('dataDisplay');
+            displayDiv.innerHTML = '';
+
+            if (data.length === 0) {
+                displayDiv.innerHTML = '<p>沒有數據可顯示。</p>';
+            } else {
+                var table = "<table border='1' style='width: 100%; border-collapse: collapse;'>";
+                data.forEach(function(row) {
+                    table += "<tr>";
+                    row.forEach(function(cell) {
+                        table += "<td style='padding: 10px; text-align: center;'>" + cell + "</td>";
+                    });
+                    table += "</tr>";
+                });
+                table += "</table>";
+                displayDiv.innerHTML = table;
+            }
+
+            // 顯示模態
+            var modal = document.getElementById('dataModal');
+            modal.style.display = "block";
+        }
+
+        // 關閉模態函數
+        function closeModal() {
+            var modal = document.getElementById('dataModal');
+            modal.style.display = "none";
+        }
+
+        // 取得歷史回傳資料
+        function getHistoricalData() {
+            google.script.run.withSuccessHandler(function(data) {
+                displayData(data); // 使用相同的 displayData 函數顯示歷史數據
+            }).fetchHistoricalData();
+        }
+    </script>
+</head>
+<body>
+    <h1>回傳程式登記</h1>
+
+    <p>加工機台(Processing machine): 
+        <select id="machine">
+            <option value="">請選擇加工機台</option>
+            <option value="T51">T51</option>
+            <option value="T22">T22</option>
+            <option value="L43-L52">L43</option>
+            <option value="L40">L40</option>
+            <option value="L50-衝桿">L50</option>
+            <option value="L-牙球">L-牙球</option>
+            <option value="B12">B12</option>
+            <option value="M41">M41</option>
+
+        </select>
+    </p>
+    <p>回傳檔號(Number): <input type="text" id="fileNo" placeholder="範例:1234 or 1234~1235"></p>
+    
+    <p>機種(Model):
+        <select id="machineType">
+            <option value="">請選擇加工機種</option>
+
+            <option value="共用件">--共用件--</option>
+
+            <!-- SN1 的選項組 -->
+            <optgroup label="SN1 系列">
+                <option value="SN1-25">SN1-25</option>
+                <option value="SN1-35">SN1-35</option>
+                <option value="SN1-45">SN1-45</option>
+                <option value="SN1-60">SN1-60</option>
+                <option value="SN1-80">SN1-80</option>
+                <option value="SN1-110">SN1-110</option>
+                <option value="SN1-160">SN1-160</option>
+                <option value="SN1-200">SN1-200</option>
+                <option value="SN1-250">SN1-250</option>
+            </optgroup>
+            
+            <!-- SN2 的選項組 -->
+            <optgroup label="SN2 系列">
+                <option value="SN2-110">SN2-110</option>
+                <option value="SN2-160">SN2-160</option>
+                <option value="SN2-200">SN2-200</option>
+                <option value="SN2-250">SN2-250</option>
+                <option value="SN2-300">SN2-300</option>
+            </optgroup>
+
+            <!-- SNS1 的選項組 -->
+            <optgroup label="SNS1 系列">
+                <option value="SNS1-80">SNS1-800</option>
+                <option value="SNS1-110">SNS1-110</option>
+                <option value="SNS1-160">SNS1-160</option>
+                <option value="SNS1-200">SNS1-200</option>
+                <option value="SNS1-250">SNS1-250</option>
+                <option value="SNS1-300">SNS1-300</option>
+            </optgroup>
+
+            <!-- SNS2 的選項組 -->
+            <optgroup label="SNS2 系列">
+                <option value="SNS2-160">SNS2-160</option>
+                <option value="SNS2-200">SNS2-200</option>
+                <option value="SNS2-250">SNS2-250</option>
+                <option value="SNS2-300">SNS2-300</option>
+                <option value="SNS2-300LT">SNS2-300LT</option>
+                <option value="SNS2-400">SNS2-400</option>
+                <option value="SNS2-400LT">SNS2-400LT</option>
+                <option value="SNS2-500">SNS2-500</option>
+                <option value="SNS2-500LT">SNS2-500LT</option>
+                <option value="SNS2-600">SNS2-600</option>
+                <option value="SNS2-600LT">SNS2-600LT</option>             
+            </optgroup>
+
+            <!-- SLS1 的選項組 -->
+            <optgroup label="SLS1 系列">
+                <option value="SLS1-80">SLS1-800</option>
+                <option value="SLS1-110">SLS1-110</option>
+                <option value="SLS1-160">SLS1-160</option>
+                <option value="SLS1-200">SLS1-200</option>
+                <option value="SLS1-250">SLS1-250</option>
+                <option value="SLS1-300">SLS1-300</option>
+            </optgroup>
+
+            <!-- SLS2 的選項組 -->
+            <optgroup label="SLS2 系列">
+                <option value="SLS2-160">SLS2-160</option>
+                <option value="SLS2-200">SLS2-200</option>
+                <option value="SLS2-250">SLS2-250</option>
+                <option value="SLS2-300">SLS2-300</option>
+                <option value="SLS2-400">SLS2-400</option>
+                <option value="SLS2-500">SLS2-500</option>        
+            </optgroup>
+
+            <!-- SD1 的選項組 -->
+            <optgroup label="SD1 系列">
+                <option value="SD1-80">SD1-80</option>
+                <option value="SD1-160">SD1-160</option>
+                <option value="SD1-200">SD1-200</option>
+                <option value="SD1-300">SD1-300</option>
+            </optgroup>
+
+            <!-- SD2 的選項組 -->
+            <optgroup label="SD2 系列">
+                <option value="SD2-160">SD2-160</option>
+                <option value="SD2-200">SD2-200</option>
+                <option value="SD2-300">SD2-300</option>
+                <option value="SD2-400">SD2-400</option>
+                <option value="SD2-500">SD2-500</option>
+            </optgroup>
+
+            <!-- SDN1 的選項組 -->
+            <optgroup label="SDN1 系列">
+                <option value="SDN1-80">SDN1-80</option>
+                <option value="SDN1-110">SDN1-110</option>
+                <option value="SDN1-160">SDN1-160</option>
+                <option value="SDN1-200">SDN1-200</option>
+                <option value="SDN1-250">SDN1-250</option>
+            </optgroup>
+
+            <!-- SD其他機種 的選項組 -->
+            <optgroup label="SD其他 系列">
+                <option value="SDM1-500">SDM1-500</option>
+                <option value="SDF1-100">SDF1-100</option>
+            </optgroup>
+
+            <!-- SDG 的選項組 -->
+            <optgroup label="SDG 系列">
+                <option value="SDG2-400">SDG2-400</option>
+                <option value="SDG2-600">SDG2-600</option>
+                <option value="SDG2-800">SDG2-800</option>
+                <option value="SDG2-1000">SDG2-1000</option>
+                <option value="SDG2-1200">SDG2-1200</option>
+            </optgroup>
+
+            <!-- SDE 的選項組 -->
+            <optgroup label="SDE 系列">
+                <option value="SDE2-400">SDE2-800</option>
+                <option value="SDE2-1000">SDG2-1000</option>
+                <option value="SDE4-1000">SDE4-1000</option>
+                <option value="SDE4-1200">SDE4-1200</option>
+                <option value="SDE4-1600">SDE4-1600</option>
+            </optgroup>
+
+            <!-- SAG 的選項組 -->
+            <optgroup label="SAG 系列">
+                <option value="SAG2-200">SAG2-200</option>
+                <option value="SAG2-250">SAG2-250</option>
+                <option value="SAG2-300">SAG2-300</option>
+                <option value="SAG2-350">SAG2-350</option>
+                <option value="SAG2-400">SAG2-400</option>
+                <option value="SAG2-500">SAG2-500</option>
+                <option value="SAG2-600">SAG2-600</option>
+                <option value="SAG2-800">SAG2-800</option>
+                <option value="SAG2-1000">SAG2-1000</option>
+                <option value="SAG2-1200">SAG2-1200</option>
+                <option value="SAG2-1600">SAG2-1600</option>
+                <option value="SAG4-500">SAG4-500</option>
+                <option value="SAG4-800">SAG4-800</option>
+            </optgroup>
+
+            <!-- SE 的選項組 -->
+            <optgroup label="SE 系列">
+                <option value="SE2-400">SE2-400</option>
+                <option value="SE2-500">SE2-500</option>
+                <option value="SE2-600">SE2-600</option>
+                <option value="SE2-800">SE2-800</option>
+                <option value="SE2-1000">SE2-1000</option>
+                <option value="SE2-1200">SE2-1200</option>                
+                <option value="SE4-500">SE4-500</option>
+                <option value="SE4-600">SE4-600</option>
+                <option value="SE4-800">SE4-800</option>
+                <option value="SE4-1000">SE4-1000</option>
+                <option value="SE4-1200">SE4-1200</option>
+                <option value="SEL2-400">SEL2-400</option>
+                <option value="SEL2-600">SEL2-600</option>
+                <option value="SEL2-800">SEL2-800</option>
+                <option value="SEL2-1000">SEL2-1000</option>    
+            </optgroup>
+
+            <!-- SM1 的選項組 -->
+            <optgroup label="SM1 系列">
+                <option value="SM1-300">SM1-300</option> 
+                <option value="SM1-500">SM1-500</option> 
+                <option value="SM1-800">SM1-800</option> 
+                <option value="SM1-1000">SM1-1000</option> 
+            </optgroup>
+
+            <!-- SM2 的選項組 -->
+            <optgroup label="SM2 系列">
+                <option value="SM2-200">SM1-200</option> 
+                <option value="SM2-300">SM1-300</option> 
+                <option value="SM2-400">SM1-400</option> 
+                <option value="SM2-600">SM1-600</option> 
+            </optgroup>
+
+            <!-- SLG 的選項組 -->
+            <optgroup label="SLG 系列">
+                <option value="SLG2-300">SLG2-300</option> 
+                <option value="SLG2-400">SLG2-400</option> 
+                <option value="SLG2-500">SLG2-500</option> 
+                <option value="SLG2-600">SLG2-600</option> 
+                <option value="SLG2-800">SLG2-800</option> 
+                <option value="SLG2-1000">SLG2-1000</option> 
+                <option value="SLG4-600">SLG2-600</option> 
+                <option value="SLG4-1000">SLG2-1000</option> 
+            </optgroup>
+        </select>
+    </p>
+
+    <p>品名(Product name): <input type="text" id="productName" placeholder="範例:牙球"></p>
+    <p>件號(Part number): <input type="text" id="partnumber" placeholder="範例:412C05"></p>
+    <p>圖號(Drawing number): <input type="text" id="drawingnumber" placeholder="範例:3-123-1234-00"></p>
+
+    <p>人員(Name): 
+        <select id="staff">
+            <option value="">請選擇回傳人員</option>
+            <option value="馮永村">馮永村</option>
+            <option value="呂志宏">呂志宏</option>
+            <option value="游凱強">游凱強</option>
+            <option value="蘇泓安">蘇泓安</option>
+            <option value="謝亞于">謝亞于</option>
+            <option value="翁誌捷">翁誌捷</option>
+            <option value="黃紳展">黃紳展</option>
+            <option value="陳映霖">陳映霖</option>
+            <option value="艾文">艾文</option>
+        </select>
+    </p>
+
+    <p>回傳日(Date):</p>
+    <p>
+        <input type="date" id="returnDate" style="width: 100%; height: 60px; font-size: 0.8em; box-sizing: border-box; font-family: 'Microsoft JhengHei', Arial, sans-serif;">
+    </p>
+
+    <button id="submitBtn" onclick="saveData()">提交</button>
+    <button id="getDataBtn" onclick="getData()">檢視未歸檔資料</button>
+    <button id="getHistoricalDataBtn" onclick="getHistoricalData()">檢視歷史回傳資料</button>
+
+    <div id="dataModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h1>回傳數據</h1>
+            <div id="dataDisplay"></div>
+        </div>
+    </div>
+</body>
+</html>
